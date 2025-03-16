@@ -30,6 +30,8 @@ func main() {
     // Определяем маршрут для получения списка
     router.GET("/test", getItems)
 
+    router.GET("/test2", getItems)
+
     // Запускаем сервер на порту 8080
     router.Run(":3000")
 }
