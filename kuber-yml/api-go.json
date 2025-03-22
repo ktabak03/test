@@ -1,0 +1,41 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "api-go"
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "api-go-1"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "api-go-1"
+        }
+      },
+      "spec": {
+        "imagePullSecrets": [
+          {
+            "name": "docker-hub-token"
+          }
+        ],
+        "containers": [
+          {
+            "name": "api-go-1",
+            "image": "ktabak03/ktabak-repo:api-go-1",
+            "imagePullPolicy": "Always",
+            "ports": [
+              {
+                "containerPort": 3000
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

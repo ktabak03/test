@@ -1,0 +1,150 @@
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Clone Repository') {
+            steps {
+                // Используем Jenkins Credentials для SSH-ключа
+                withCredentials([sshUserPrivateKey(credentialsId: '8ce7b945-8cb7-4f10-a7c4-0fa9d515f18c', keyFileVariable: 'SSH_KEY')]) {
+                    script {
+                        // Путь, куда клонировать репозиторий
+                        def repoDir = '/var/jenkins_home/test-git'
+
+                        // Проверяем, существует ли директория
+                        if (fileExists(repoDir)) {
+                            echo "Directory ${repoDir} already exists. Performing git pull..."
+                            sh """
+                                # Устанавливаем права на SSH-ключ
+                                chmod 600 $SSH_KEY
+                                # Переходим в директорию и выполняем git pull
+                                cd ${repoDir}
+                                GIT_SSH_COMMAND="ssh -i $SSH_KEY -o StrictHostKeyChecking=no" git pull origin main
+                            """
+                        } else {
+                            echo "Directory ${repoDir} does not exist. Performing git clone..."
+                            sh """
+                                # Устанавливаем права на SSH-ключ
+                                chmod 600 $SSH_KEY
+                                # Клонируем репозиторий
+                                GIT_SSH_COMMAND="ssh -i $SSH_KEY -o StrictHostKeyChecking=no" git clone git@github.com:ktabak03/test.git ${repoDir}
+                            """
+                        }
+                    }
+                }
+                echo 'Repository updated successfully'
+            }
+        }
+
+        stage('Build test container') { 
+            steps {
+                script{
+                    // Проверка на ошибки 
+                    // sh 'go vet /var/jenkins_home/test-git' но это нужно поставить в контейнер go 
+                    
+                    // Сборка тестового образа api 
+                    sh 'docker build -t api-test /var/jenkins_home/test-git/docker-build/api-go/'
+                    
+                    // Сборка тестовго nginx 
+                    sh 'docker build --build-arg CONTAPI=api-test -t nginx-test /var/jenkins_home/test-git/docker-build/nginx'
+                    
+                    
+                    
+                }
+            }
+        }
+        
+        stage('Run test Containers') {
+            steps {
+                script {
+                    // Сборка тестовго nginx 
+                    // sh 'docker build --build-arg CONTAPI=api-test -t nginx-test /var/jenkins_home/docker-build/nginx'
+                    
+                    // Запуск test api контейнера
+                    sh 'docker run -d --name api-test --network devops api-test'
+                    
+                    // Запуск test контейнера
+                    sh 'docker run -d --name nginx-test --network devops -p 8084:80  nginx-test'
+
+                    // Дополнительные шаги, если нужно
+                    echo 'Both containers are running'
+                    sh 'curl http://90.156.204.221:8084/test'
+                    
+                    echo 'Test is OK'
+                }
+            }
+        }
+    
+        stage('Build prodaction') { 
+            steps {
+                script{
+                    // Проверка на ошибки 
+                    // sh 'go vet /var/jenkins_home/test-git' но это нужно поставить в контейнер go 
+                    
+                    // Сборка прода 
+                    sh 'docker build -t ktabak03/ktabak-repo:api-go-1 /var/jenkins_home/test-git/docker-build/api-go/'
+                    
+                    // Сборка прода 
+                    sh 'docker build --build-arg CONTAPI=api-go-service -t ktabak03/ktabak-repo:nginx-go-1 /var/jenkins_home/test-git/docker-build/nginx'
+                    
+
+                    
+                    //// ----------
+                    // Удаляем прод
+                    //sh 'docker rm -f api-go-1'
+                    //sh 'docker rm -f nginx-go-1'
+                    
+                    // Запуск контейнера с образом nginx:go-1
+                    //sh 'docker run -d --name api-go-1 --network devops ktabak03/ktabak-repo:api-go-1'
+                    
+                    // Запуск контейнера с образом api:go-1
+                    //sh 'docker run -d --name nginx-go-1 --network devops -p 8081:80  ktabak03/ktabak-repo:nginx-go-1'
+                }
+            }
+        }
+        
+        stage('Git test push docker iso') {
+            steps { 
+                script { 
+                        withCredentials([usernamePassword(credentialsId: 'docker-hub', passwordVariable: 'DOCKER_HUP_PASS', usernameVariable: 'DOCKER_HUP_USER')]) {
+                            sh 'echo "$DOCKER_HUP_PASS  $DOCKER_HUP_PASS"'
+                            sh 'echo "$DOCKER_HUP_PASS" | docker login --username $DOCKER_HUP_USER --password-stdin'
+                            sh 'docker push ktabak03/ktabak-repo:api-go-1'
+                            sh 'docker push ktabak03/ktabak-repo:nginx-go-1'
+
+                            sh 'echo "PUSH OK"'
+                        }
+                }
+            }
+        }
+        
+        stage('Test kuber secret') {
+            steps{
+                script{
+                    def repoDir = '/var/jenkins_home/test-git'
+
+                    def token = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjVBdWlyajJ2aS1ES1VoODdnZnZpc0dRR0xqdllVNDlBTXBJU2RfNnQ3S00ifQ.eyJhdWQiOlsiaHR0cHM6Ly9rdWJlcm5ldGVzLmRlZmF1bHQuc3ZjLmNsdXN0ZXIubG9jYWwiLCJrM3MiXSwiZXhwIjoxNzQyNjUwMTY2LCJpYXQiOjE3NDI2NDY1NjYsImlzcyI6Imh0dHBzOi8va3ViZXJuZXRlcy5kZWZhdWx0LnN2Yy5jbHVzdGVyLmxvY2FsIiwianRpIjoiZGIxZDJlYjgtYzU5MC00ZGNmLTg5NGQtZmViYTRlNjcxODI4Iiwia3ViZXJuZXRlcy5pbyI6eyJuYW1lc3BhY2UiOiJkZWZhdWx0Iiwic2VydmljZWFjY291bnQiOnsibmFtZSI6ImplbmtpbnMiLCJ1aWQiOiJhNGFlNzY0MS0wZjc3LTRiZDUtYTAyZS00NmM4OTAyODE3Y2MifX0sIm5iZiI6MTc0MjY0NjU2Niwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6amVua2lucyJ9.cZm7TocdReBuCo6eBjXz2Lrkukn00GogwdECJn2Fi9QLiKkqq6IEYd6y2GqdwDCCZ_SXw9ot4lKZFDMW6bLWSeeKYma4jPiCcV5FN9w4IXJFwwBCtXSnr0zy0bjVRU1ng8_Vj2LpJL7Kvt_H3icV2aJJhvZFWdwetl5-4_8IbYbaJvy9blkawpeQMB5fE9tmtDsXX3pw_v1LqZeK2QHKq6phS7AfJnMcoLd2xXMXHL_wqmX2OvcXuChZ6_nPK48Is-cxddY_wOlf06SoeSqe0bu0vxvjMP9oP3IBidtBrfV-Wnsl3w86HfFaUktPYbg2PhNavvBnfIBzIwCIY6w7UA'
+
+                    sh 'curl -k -X POST https://90.156.204.221:6443/api/v1/namespaces/default/pods  --header "Authorization: Bearer ${token}" --header "Content-Type: application/json" --data @${repoDir}/kuber-yml/api-go.json' 
+
+                    sh 'curl -k -X POST https://90.156.204.221:6443/api/v1/namespaces/default/servises  --header "Authorization: Bearer ${token}" --header "Content-Type: application/json" --data @${repoDir}/kuber-yml/api-go-service.json' 
+
+                    sh 'curl -k -X POST https://90.156.204.221:6443/api/v1/namespaces/default/pods  --header "Authorization: Bearer ${token}" --header "Content-Type: application/json" --data @${repoDir}/kuber-yml/nginx-go-service.json' 
+
+                    sh 'curl -k -X POST https://90.156.204.221:6443/api/v1/namespaces/default/pods  --header "Authorization: Bearer ${token}" --header "Content-Type: application/json" --data @${repoDir}/kuber-yml/nginx-go-1.json' 
+                    
+                }
+            }
+        }
+
+    }
+    post {
+        always {
+            script {
+                // Остановка и удаление контейнеров после завершения пайплайна
+                sh 'docker rm -f nginx-test || true'
+                sh 'docker rm -f api-test || true'
+            }
+        }
+    }
+}
