@@ -1,0 +1,11 @@
+{
+  "spec": {
+    "template": {
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/restartedAt": "2025-03-24T15:50:23Z"
+        }
+      }
+    }
+  }
+}
