@@ -123,15 +123,15 @@ pipeline {
                 script{
                     def repoDir = '/var/jenkins_home/test-git'
 
-                    def token = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjVBdWlyajJ2aS1ES1VoODdnZnZpc0dRR0xqdllVNDlBTXBJU2RfNnQ3S00ifQ.eyJhdWQiOlsiaHR0cHM6Ly9rdWJlcm5ldGVzLmRlZmF1bHQuc3ZjLmNsdXN0ZXIubG9jYWwiLCJrM3MiXSwiZXhwIjoxNzQyNjUwMTY2LCJpYXQiOjE3NDI2NDY1NjYsImlzcyI6Imh0dHBzOi8va3ViZXJuZXRlcy5kZWZhdWx0LnN2Yy5jbHVzdGVyLmxvY2FsIiwianRpIjoiZGIxZDJlYjgtYzU5MC00ZGNmLTg5NGQtZmViYTRlNjcxODI4Iiwia3ViZXJuZXRlcy5pbyI6eyJuYW1lc3BhY2UiOiJkZWZhdWx0Iiwic2VydmljZWFjY291bnQiOnsibmFtZSI6ImplbmtpbnMiLCJ1aWQiOiJhNGFlNzY0MS0wZjc3LTRiZDUtYTAyZS00NmM4OTAyODE3Y2MifX0sIm5iZiI6MTc0MjY0NjU2Niwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6amVua2lucyJ9.cZm7TocdReBuCo6eBjXz2Lrkukn00GogwdECJn2Fi9QLiKkqq6IEYd6y2GqdwDCCZ_SXw9ot4lKZFDMW6bLWSeeKYma4jPiCcV5FN9w4IXJFwwBCtXSnr0zy0bjVRU1ng8_Vj2LpJL7Kvt_H3icV2aJJhvZFWdwetl5-4_8IbYbaJvy9blkawpeQMB5fE9tmtDsXX3pw_v1LqZeK2QHKq6phS7AfJnMcoLd2xXMXHL_wqmX2OvcXuChZ6_nPK48Is-cxddY_wOlf06SoeSqe0bu0vxvjMP9oP3IBidtBrfV-Wnsl3w86HfFaUktPYbg2PhNavvBnfIBzIwCIY6w7UA'
+                    def token = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjVBdWlyajJ2aS1ES1VoODdnZnZpc0dRR0xqdllVNDlBTXBJU2RfNnQ3S00ifQ.eyJhdWQiOlsiaHR0cHM6Ly9rdWJlcm5ldGVzLmRlZmF1bHQuc3ZjLmNsdXN0ZXIubG9jYWwiLCJrM3MiXSwiZXhwIjoxNzc0MjcwNzEwLCJpYXQiOjE3NDI3MzQ3MTAsImlzcyI6Imh0dHBzOi8va3ViZXJuZXRlcy5kZWZhdWx0LnN2Yy5jbHVzdGVyLmxvY2FsIiwianRpIjoiMDViMzNlY2UtOGZjMi00ZWMzLTgzODAtZjQxY2E1YzJjYjhkIiwia3ViZXJuZXRlcy5pbyI6eyJuYW1lc3BhY2UiOiJkZWZhdWx0Iiwic2VydmljZWFjY291bnQiOnsibmFtZSI6ImplbmtpbnMiLCJ1aWQiOiJhNGFlNzY0MS0wZjc3LTRiZDUtYTAyZS00NmM4OTAyODE3Y2MifX0sIm5iZiI6MTc0MjczNDcxMCwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6amVua2lucyJ9.cli0YljZWywVwzOvCsNdcw3lRHnniSjrYu0UGjHOvi_nZ_MhgD6ezJZYTw_rgV9Y5QZb0AP5TOcKjaSDf0IJ6FEJJXvnNlI2kBPGzth6M4uV0MosF4LTK5wUnv7SWVlXzop1a0RLFOti3o-o15gH5ywYb9wGnRIa5tNLywOnQRtpPeLZbvtLdPRiswdVFtDUt60JsE1JqYPzRKL_zZQXBeN7mDo4_LDBJTvub-pJTUKcNlgNOg1OnRkDweTZOSjkLDqga7tfAXBk4UP5zoIAyVbDVEMgGN0GkQloAAK0wj5XtAoz_gySKxpo_wy5WBhRi9W_R_LG4Gt8ASsqkdge4A'
 
-                    sh 'curl -k -X POST https://90.156.204.221:6443/api/v1/namespaces/default/pods  --header "Authorization: Bearer ${token}" --header "Content-Type: application/json" --data @${repoDir}/kuber-yml/api-go.json' 
+                    sh "curl -k -X POST https://90.156.204.221:6443/apis/apps/v1/namespaces/default/deployments  --header \"Authorization: Bearer ${token}\" --header \"Content-Type: application/json\" --data @/var/jenkins_home/test-git/kuber-yml/api-go.json"
 
-                    sh 'curl -k -X POST https://90.156.204.221:6443/api/v1/namespaces/default/servises  --header "Authorization: Bearer ${token}" --header "Content-Type: application/json" --data @${repoDir}/kuber-yml/api-go-service.json' 
+                    sh "curl -k -X POST https://90.156.204.221:6443/api/v1/namespaces/default/services  --header \"Authorization: Bearer ${token}\" --header \"Content-Type: application/json\" --data @/var/jenkins_home/test-git/kuber-yml/api-go-service.json"
 
-                    sh 'curl -k -X POST https://90.156.204.221:6443/api/v1/namespaces/default/pods  --header "Authorization: Bearer ${token}" --header "Content-Type: application/json" --data @${repoDir}/kuber-yml/nginx-go-service.json' 
+                    sh "curl -k -X POST https://90.156.204.221:6443/api/v1/namespaces/default/services  --header \"Authorization: Bearer ${token}\" --header \"Content-Type: application/json\" --data @/var/jenkins_home/test-git/kuber-yml/nginx-go-service.json"
 
-                    sh 'curl -k -X POST https://90.156.204.221:6443/api/v1/namespaces/default/pods  --header "Authorization: Bearer ${token}" --header "Content-Type: application/json" --data @${repoDir}/kuber-yml/nginx-go-1.json' 
+                    sh "curl -k -X POST https://90.156.204.221:6443/apis/apps/v1/namespaces/default/deployments  --header \"Authorization: Bearer ${token}\" --header \"Content-Type: application/json\" --data @/var/jenkins_home/test-git/kuber-yml/nginx-go-1.json"
                     
                 }
             }

@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+
+    environment {
+        TOKEN_KUBER = "Hello, Jenkins!"
+    }
+
+    stages {
+        stage('Hello') {
+
+            steps {
+                script {
+                    def token = "TEST"
+                    sh "echo '${token}'"
+                    sh "echo ${env.TOKEN_KUBER}"
+                }
+            }
+        }
+    
+    
+        stage('Test kuber secret') {
+            steps{
+                script{
+                    def repoDir = '/var/jenkins_home/test-git'
+
+                    def token = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjVBdWlyajJ2aS1ES1VoODdnZnZpc0dRR0xqdllVNDlBTXBJU2RfNnQ3S00ifQ.eyJhdWQiOlsiaHR0cHM6Ly9rdWJlcm5ldGVzLmRlZmF1bHQuc3ZjLmNsdXN0ZXIubG9jYWwiLCJrM3MiXSwiZXhwIjoxNzc0MjcwNzEwLCJpYXQiOjE3NDI3MzQ3MTAsImlzcyI6Imh0dHBzOi8va3ViZXJuZXRlcy5kZWZhdWx0LnN2Yy5jbHVzdGVyLmxvY2FsIiwianRpIjoiMDViMzNlY2UtOGZjMi00ZWMzLTgzODAtZjQxY2E1YzJjYjhkIiwia3ViZXJuZXRlcy5pbyI6eyJuYW1lc3BhY2UiOiJkZWZhdWx0Iiwic2VydmljZWFjY291bnQiOnsibmFtZSI6ImplbmtpbnMiLCJ1aWQiOiJhNGFlNzY0MS0wZjc3LTRiZDUtYTAyZS00NmM4OTAyODE3Y2MifX0sIm5iZiI6MTc0MjczNDcxMCwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6amVua2lucyJ9.cli0YljZWywVwzOvCsNdcw3lRHnniSjrYu0UGjHOvi_nZ_MhgD6ezJZYTw_rgV9Y5QZb0AP5TOcKjaSDf0IJ6FEJJXvnNlI2kBPGzth6M4uV0MosF4LTK5wUnv7SWVlXzop1a0RLFOti3o-o15gH5ywYb9wGnRIa5tNLywOnQRtpPeLZbvtLdPRiswdVFtDUt60JsE1JqYPzRKL_zZQXBeN7mDo4_LDBJTvub-pJTUKcNlgNOg1OnRkDweTZOSjkLDqga7tfAXBk4UP5zoIAyVbDVEMgGN0GkQloAAK0wj5XtAoz_gySKxpo_wy5WBhRi9W_R_LG4Gt8ASsqkdge4A'
+                    
+                    def TIME_DATE = 'sh $(date -u +"%Y-%m-%dT%H:%M:%SZ")'
+                    sh "echo ${TIME_DATE}"
+
+                    sh "sed \"s/DATA_TIME/${TIME_DATE}/g\" /var/jenkins_home/test-git/kuber-yml/restart-deployment.temp > /tmp/restart-deployment.json"
+                    sh "curl -k -X PATCH https://90.156.204.221:6443/apis/apps/v1/namespaces/default/deployments/nginx-go-1  --header \"Authorization: Bearer ${token}\" --header \"Content-Type: application/strategic-merge-patch+json\" --data @/tmp/restart-deployment.json"
+                    
+                    // sh "curl -k -X POST https://90.156.204.221:6443/apis/apps/v1/namespaces/default/deployments  --header \"Authorization: Bearer ${token}\" --header \"Content-Type: application/json\" --data @/var/jenkins_home/test-git/kuber-yml/api-go.json"
+                }
+            }
+        }
+    }
+}
